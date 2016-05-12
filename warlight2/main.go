@@ -9,6 +9,7 @@ import (
 	"strings"
 )
 
+// Settings
 var (
 	timebank, time_per_move, max_rounds, starting_armies, starting_pick_amount int
 
@@ -16,6 +17,30 @@ var (
 
 	starting_regions []int
 )
+
+func settings(p []string) string {
+	switch p[0] {
+	case "timebank":
+		timebank = parseInt(p[1])
+	case "time_per_move":
+		time_per_move = parseInt(p[1])
+	case "max_rounds":
+		max_rounds = parseInt(p[1])
+	case "your_bot":
+		your_bot = p[1]
+	case "opponent_bot":
+		opponent_bot = p[1]
+	case "starting_armies":
+		starting_armies = parseInt(p[1])
+	case "starting_regions":
+		starting_regions = parseInts(p[1:])
+	case "starting_pick_amount":
+		starting_pick_amount = parseInt(p[1])
+	default:
+		log.Fatal("settings unrecognised: ", p)
+	}
+	return ""
+}
 
 func parseInt(s string) int {
 	n, err := strconv.Atoi(s)
@@ -41,40 +66,18 @@ func commaInts(s string) []int {
 	return reply
 }
 
-func settings(p []string) string {
-	switch p[0] {
-	case "timebank":
-		timebank = parseInt(p[1])
-	case "time_per_move":
-		time_per_move = parseInt(p[1])
-	case "max_rounds":
-		max_rounds = parseInt(p[1])
-	case "your_bot":
-		your_bot = p[1]
-	case "opponent_bot":
-		opponent_bot = p[1]
-	case "starting_armies":
-		starting_armies = parseInt(p[1])
-	case "starting_regions":
-		starting_regions = parseInts(p[1:])
-	case "starting_pick_amount  ":
-		starting_pick_amount = parseInt(p[1])
-	}
-	return ""
-}
-
 type (
-	region      int
-	bonus       int
-	superRegion int
+	region    int
+	bonus     int
+	continent int
 )
 
 var (
-	regionBonus      map[region]bonus
-	regionID         map[region]superRegion
-	adjacency        map[region][]region
-	wasteland        map[region]bool
-	opponentStarting map[region]bool
+	continentBonus    map[continent]bonus
+	regionToContinent map[region]continent
+	adjacency         map[region][]region
+	wasteland         map[region]bool
+	opponentStarting  map[region]bool
 )
 
 func addNeighbour(a, b region) {
@@ -85,20 +88,20 @@ func addNeighbour(a, b region) {
 func setup_map(p []string) {
 	switch p[0] {
 	case "super_regions":
-		regionBonus = make(map[region]bonus)
+		continentBonus = make(map[region]bonus)
 		ns := parseInts(p[1:])
 		for len(ns) > 0 {
 			r, b := ns[0], ns[1]
 			ns = ns[2:]
-			regionBonus[region(r)] = bonus(b)
+			continentBonus[continent(r)] = bonus(b)
 		}
 	case "regions":
-		regionID = make(map[region]superRegion)
+		regionToContinent = make(map[region]continent)
 		ns := parseInts(p[1:])
 		for len(ns) > 0 {
 			r, s := ns[0], ns[1]
 			ns = ns[2:]
-			regionID[region(r)] = superRegion(s)
+			regionToContinent[region(r)] = continent(s)
 		}
 	case "neighbours":
 		p = p[1:]
@@ -114,11 +117,13 @@ func setup_map(p []string) {
 		for _, r := range parseInts(p[1:]) {
 			wasteland[region(r)] = true
 		}
-	case "opponent_starting_regions ":
+	case "opponent_starting_regions":
 		opponentStarting = make(map[region]bool)
 		for _, r := range parseInts(p[1:]) {
 			opponentStarting[region(r)] = true
 		}
+	default:
+		log.Fatal("unrecognised setup_map", p)
 	}
 }
 
