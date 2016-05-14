@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"math/rand"
 	"strconv"
 	"strings"
 )
@@ -80,12 +81,27 @@ func (r region) attack(attacked []int) (int, int, bool) {
 		}
 	}
 	if weak == nil {
-		return 0, 0, false
+		return r.reinforce()
 	}
 	if float64(r.armies-1)*0.6 > float64(weak.armies)+0.5 {
 		return weak.id, r.armies - 1, true
 	}
 	return 0, 0, false
+}
+
+// If all my neighbours are friendly (and I have spare), move randomly
+func (r region) reinforce() (int, int, bool) {
+	if r.armies < 2 {
+		return 0, 0, false
+	}
+	for _, o := range r.near {
+		if o.owner != me {
+			return 0, 0, false
+		}
+	}
+
+	dst := r.near[rand.Intn(len(r.near))]
+	return dst.id, r.armies - 1, true
 }
 
 var (
